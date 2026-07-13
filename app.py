@@ -270,6 +270,7 @@ with st.sidebar:
             
         st.subheader("📍 Location & Live Weather")
         # Render a geolocation button so the browser can ask the user for location permission
+        st.caption("Click the 🎯 button below to get local weather!")
         loc = streamlit_geolocation()
         
         lat, lon = None, None

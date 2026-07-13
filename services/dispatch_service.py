@@ -34,7 +34,8 @@ def get_joined_roster():
             "contact": d.get("contact"),
             "status": avail_info.get("status", "Unknown"),
             "building_assigned": avail_info.get("building_assigned", "Unknown"),
-            "floor_assigned": avail_info.get("floor_assigned", "Unknown")
+            "floor_assigned": avail_info.get("floor_assigned", "Unknown"),
+            "password": "password123"
         })
     return roster
 

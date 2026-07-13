@@ -5,6 +5,15 @@ from services.db_service import db_service
 from services.ai_service import triage_incident, chat_with_copilot, load_stadium_context
 from services.weather_service import get_live_weather
 
+@st.cache_data(ttl=5)
+def get_all_users_cached():
+    return db_service.get_all_users()
+
+@st.cache_data(ttl=5)
+def get_all_tickets_cached():
+    return db_service.get_all_tickets()
+
+
 st.set_page_config(
     page_title="VenueOps Copilot | FIFA 2026",
     page_icon="🏟️",
@@ -54,7 +63,7 @@ if "otp_verified_for" not in st.session_state:
 def show_login_screen():
     st.title("🏟️ VenueOps Copilot - Login")
     
-    users = db_service.get_all_users()
+    users = get_all_users_cached()
     if users == "QUOTA_EXCEEDED":
         st.error("Firebase database quota exhausted. Please try again tomorrow at 12:00 AM PST (when the daily quota resets).")
         return
@@ -277,7 +286,7 @@ with tab1:
             st.rerun()
 
 
-    raw_tickets = db_service.get_all_tickets()
+    raw_tickets = get_all_tickets_cached()
     tickets = raw_tickets
     
     if is_manager:
@@ -297,7 +306,7 @@ with tab1:
     if is_admin or is_manager:
         st.markdown("---")
         st.write("🔍 **Advanced Filters**")
-        all_users_for_filter = db_service.get_all_users()
+        all_users_for_filter = get_all_users_cached()
         if is_manager:
             all_users_for_filter = [u for u in all_users_for_filter if u.get("reporting_to") == logged_in_user["name"]]
         
@@ -372,7 +381,7 @@ with tab1:
                 # Reassign Logic (Managers & Admins)
                 if is_admin or is_manager:
                     with st.expander("🔄 Reassign Ticket"):
-                        all_users = db_service.get_all_users()
+                        all_users = get_all_users_cached()
                         # Filter for available users
                         if is_admin:
                             available_users = [u for u in all_users if u.get("status") == "Available"]
@@ -473,7 +482,7 @@ with tab2:
                         
                         # Duplicate Ticket Prevention
 
-                        all_tickets = db_service.get_all_tickets()
+                        all_tickets = get_all_tickets_cached()
                         is_duplicate = False
                         for t in all_tickets:
                             if t.get("status") == "Open" and t.get("location") == triage_result.get("location") and t.get("incident_type") == triage_result.get("incident_type"):
@@ -510,7 +519,7 @@ with tab3:
         st.rerun()
         
 
-    all_users = db_service.get_all_users()
+    all_users = get_all_users_cached()
     if is_admin:
         roster = all_users
     elif is_manager:
@@ -604,7 +613,7 @@ with tab4:
                 if submitted:
                     if new_name and new_password:
                         # Auto-generate a standardized sequential ID (e.g. EMP042)
-                        all_users = db_service.get_all_users()
+                        all_users = get_all_users_cached()
                         existing_ids = [int(u["id"][3:]) for u in all_users if u["id"].upper().startswith("EMP") and u["id"][3:].isdigit()]
                         next_num = max(existing_ids) + 1 if existing_ids else 1
                         generated_id = f"EMP{next_num:03d}"
@@ -630,7 +639,7 @@ with tab4:
                     
     with col_list:
         st.markdown("#### Current Users")
-        all_users = db_service.get_all_users()
+        all_users = get_all_users_cached()
         
         visible_users = []
         if is_admin:

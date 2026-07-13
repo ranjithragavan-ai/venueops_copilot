@@ -2,20 +2,11 @@ import requests
 
 def get_live_weather():
     """
-    Fetches live weather data from Open-Meteo for the user's current location via IP Geolocation.
+    Fetches live weather data from Open-Meteo for the stadium location.
     """
-    # 1. Get current location from IP
-    lat, lon = 40.8128, -74.0742 # Defaults
-    city = "Unknown Location"
-    try:
-        ip_resp = requests.get("http://ip-api.com/json/", timeout=5)
-        if ip_resp.status_code == 200:
-            ip_data = ip_resp.json()
-            lat = ip_data.get("lat", lat)
-            lon = ip_data.get("lon", lon)
-            city = f"{ip_data.get('city', 'Unknown')}, {ip_data.get('country', '')}"
-    except Exception as e:
-        print(f"Error fetching IP location: {e}")
+    # Hardcoded to Chennai for the demo (or you can change to any stadium's coordinates)
+    lat, lon = 13.0827, 80.2707 
+    city = "Chennai, India"
 
     # 2. Get weather for those coordinates
     url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code"
@@ -42,7 +33,7 @@ def get_live_weather():
             icon = "🌧️"
         elif code in [71, 73, 75, 85, 86]:
             condition = "Snow"
-            icon = "❄️"
+            icon = "🌨️"
         elif code in [95, 96, 99]:
             condition = "Thunderstorm"
             icon = "⛈️"

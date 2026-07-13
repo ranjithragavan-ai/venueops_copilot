@@ -106,6 +106,7 @@ def show_login_screen():
         submitted = st.form_submit_button("Log In", type="primary")
         
         if submitted:
+            emp_id = emp_id.strip()
             if emp_id in user_map:
                 user = user_map[emp_id]
                 attempts = st.session_state["login_attempts"].get(emp_id, 0)

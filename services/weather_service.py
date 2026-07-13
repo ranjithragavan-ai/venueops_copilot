@@ -1,14 +1,30 @@
 import requests
 
-def get_live_weather():
+def get_live_weather(lat=None, lon=None):
     """
-    Fetches live weather data from Open-Meteo for the stadium location.
+    Fetches live weather data from Open-Meteo for the given coordinates.
     """
-    # Hardcoded to Chennai for the demo (or you can change to any stadium's coordinates)
-    lat, lon = 13.0827, 80.2707 
-    city = "Chennai, India"
+    city = "Current Location"
+    
+    if lat is None or lon is None:
+        # Default to MetLife Stadium if no coordinates provided
+        lat, lon = 40.8128, -74.0742 
+        city = "Stadium Location"
+    else:
+        # Reverse geocoding to get the city name
+        try:
+            headers = {"User-Agent": "VenueOps-Copilot-Hackathon"}
+            geo_url = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json"
+            geo_resp = requests.get(geo_url, headers=headers, timeout=5)
+            if geo_resp.status_code == 200:
+                geo_data = geo_resp.json()
+                address = geo_data.get("address", {})
+                city = address.get("city") or address.get("town") or address.get("county") or "Local Area"
+                city = f"{city}, {address.get('country', '')}"
+        except Exception as e:
+            print(f"Error reverse geocoding: {e}")
 
-    # 2. Get weather for those coordinates
+    # Get weather for coordinates
     url = f"https://api.open-meteo.com/v1/forecast?latitude={lat}&longitude={lon}&current=temperature_2m,weather_code"
     try:
         response = requests.get(url, timeout=5)

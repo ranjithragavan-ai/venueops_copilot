@@ -4,6 +4,7 @@ import json
 from services.db_service import db_service
 from services.ai_service import triage_incident, chat_with_copilot, load_stadium_context
 from services.weather_service import get_live_weather
+from streamlit_geolocation import streamlit_geolocation
 
 @st.cache_data(ttl=5)
 def get_all_users_cached():
@@ -268,7 +269,15 @@ with st.sidebar:
             st.markdown(f"**{gate}:** :{color}[{status}]")
             
         st.subheader("📍 Location & Live Weather")
-        weather = get_live_weather()
+        # Render a geolocation button so the browser can ask the user for location permission
+        loc = streamlit_geolocation()
+        
+        lat, lon = None, None
+        if loc and loc.get('latitude') and loc.get('longitude'):
+            lat = loc['latitude']
+            lon = loc['longitude']
+            
+        weather = get_live_weather(lat, lon)
         
         # Display dynamically fetched city instead of hardcoded stadium state venue
         st.write(f"**{weather.get('city', stadium_state.get('venue'))}**")

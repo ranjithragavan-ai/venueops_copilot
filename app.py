@@ -56,7 +56,7 @@ def show_login_screen():
     
     users = db_service.get_all_users()
     if not users:
-        st.error("No users found in database. Please run the migration script.")
+        st.error("Firebase database quota exhausted. Please try again tomorrow at 12:00 AM PST (when the daily quota resets).")
         return
         
     user_map = {u['id']: u for u in users}

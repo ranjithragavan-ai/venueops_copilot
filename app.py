@@ -93,6 +93,13 @@ def show_login_screen():
 
     st.markdown("Please log in using your Employee ID and Password.")
     
+    st.info("""
+    **💡 Hackathon Demo Credentials:**
+    - **Admin:** `admin` | Password: `password123`
+    - **Manager:** `EMP001` | Password: `password123`
+    - **Staff:** `EMP006` | Password: `password123`
+    """)
+    
     with st.form("login_form"):
         emp_id = st.text_input("Employee ID")
         password = st.text_input("Password", type="password")

@@ -239,7 +239,7 @@ with st.sidebar:
                             var text = "";
                             if (hours > 0) text += hours + "h ";
                             text += minutes + "m " + seconds + "s";
-                            document.getElementById("countdown").innerHTML = "-" + text;
+                            document.getElementById("countdown").innerHTML = text;
                         }}
                     }}, 1000);
                 </script>

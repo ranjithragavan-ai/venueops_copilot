@@ -11,16 +11,15 @@ def get_live_weather(lat=None, lon=None):
         lat, lon = 40.8128, -74.0742 
         city = "Stadium Location"
     else:
-        # Reverse geocoding to get the city name
+        # Reverse geocoding to get the city name using BigDataCloud
         try:
-            headers = {"User-Agent": "VenueOps-Copilot-Hackathon"}
-            geo_url = f"https://nominatim.openstreetmap.org/reverse?lat={lat}&lon={lon}&format=json"
-            geo_resp = requests.get(geo_url, headers=headers, timeout=5)
+            geo_url = f"https://api.bigdatacloud.net/data/reverse-geocode-client?latitude={lat}&longitude={lon}&localityLanguage=en"
+            geo_resp = requests.get(geo_url, timeout=5)
             if geo_resp.status_code == 200:
                 geo_data = geo_resp.json()
-                address = geo_data.get("address", {})
-                city = address.get("city") or address.get("town") or address.get("county") or "Local Area"
-                city = f"{city}, {address.get('country', '')}"
+                fetched_city = geo_data.get("city") or geo_data.get("locality") or "Local Area"
+                country = geo_data.get("countryName", "")
+                city = f"{fetched_city}, {country}"
         except Exception as e:
             print(f"Error reverse geocoding: {e}")
 

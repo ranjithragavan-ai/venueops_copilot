@@ -136,3 +136,15 @@ def free_manager(manager_name):
                 a["status"] = "Available"
                 break
         save_table("data/employee_availability.json", availability)
+
+def occupy_employee(employee_id):
+    """Marks an employee as Occupied."""
+    if not employee_id:
+        return
+        
+    availability = load_table("data/employee_availability.json")
+    for a in availability:
+        if a["employee_id"] == employee_id:
+            a["status"] = "Occupied"
+            break
+    save_table("data/employee_availability.json", availability)

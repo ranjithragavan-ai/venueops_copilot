@@ -39,6 +39,8 @@ When the application boots:
 
 This guarantees that the UI, AI logic, and RBAC features remain 100% functional and testable out-of-the-box for evaluators, while still proving the production-ready Firebase implementation exists in the codebase.
 
+*(Note: If you wish to test the live API and Firebase integration, simply copy `.env.example` to `.env` and provide your own Gemini API Key and Firebase Service Account JSON).*
+
 ---
 
 ### Tech Stack

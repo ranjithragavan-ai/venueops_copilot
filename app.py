@@ -303,12 +303,12 @@ with tab1:
             for t in raw_tickets:
                 if t.get("escalation_contact") == logged_in_user["name"]:
                     tickets.append(t)
-                elif t.get("assigned_employee", {}).get("reporting_to") == logged_in_user["name"]:
+                elif isinstance(t.get("assigned_employee"), dict) and t.get("assigned_employee").get("reporting_to") == logged_in_user["name"]:
                     tickets.append(t)
     elif not is_admin:
         view_filter = st.radio("Ticket View:", ["All Tickets", "Assigned to Me"], horizontal=True)
         if view_filter == "Assigned to Me":
-            tickets = [t for t in raw_tickets if t.get("assigned_employee", {}).get("id") == logged_in_user["id"]]
+            tickets = [t for t in raw_tickets if isinstance(t.get("assigned_employee"), dict) and t.get("assigned_employee").get("id") == logged_in_user["id"]]
     
     if is_admin or is_manager:
         st.markdown("---")
@@ -321,7 +321,7 @@ with tab1:
         selected_assignee = st.selectbox("Filter by Assignee:", filter_options)
         
         if selected_assignee != "All":
-            tickets = [t for t in tickets if t.get("assigned_employee") and t["assigned_employee"].get("name") == selected_assignee]
+            tickets = [t for t in tickets if isinstance(t.get("assigned_employee"), dict) and t.get("assigned_employee").get("name") == selected_assignee]
             
     if not tickets:
         st.info("No incidents reported. The stadium is secure.")

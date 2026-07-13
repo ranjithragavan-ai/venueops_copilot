@@ -97,7 +97,7 @@ def show_login_screen():
     **💡 Hackathon Demo Credentials:**
     - **Admin:** `admin` | Password: `password123`
     - **Manager:** `EMP001` | Password: `password123`
-    - **Staff:** `EMP006` | Password: `password123`
+    - **Staff:** `EMP011` | Password: `password123`
     """)
     
     with st.form("login_form"):

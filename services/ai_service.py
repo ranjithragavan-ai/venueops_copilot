@@ -25,7 +25,7 @@ def load_stadium_context():
             stadium_state = json.load(f)
             
         # Logic to auto-reset match_start_time if match has ended (start_time + 3 hours)
-        now = datetime.datetime.now()
+        now = datetime.datetime.now(datetime.timezone.utc)
         start_time_str = stadium_state.get('match_start_time')
         needs_update = False
         
@@ -34,6 +34,10 @@ def load_stadium_context():
         else:
             try:
                 start_dt = datetime.datetime.fromisoformat(start_time_str)
+                # Make naive datetimes UTC aware to avoid comparison errors
+                if start_dt.tzinfo is None:
+                    start_dt = start_dt.replace(tzinfo=datetime.timezone.utc)
+                    
                 # If 3 hours have passed since start time, the match has ended
                 if now > start_dt + datetime.timedelta(hours=3):
                     needs_update = True

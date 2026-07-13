@@ -188,7 +188,8 @@ with st.sidebar:
             # Parse and format the start time nicely
             try:
                 start_dt = datetime.datetime.fromisoformat(start_time_iso)
-                st.write(f"**Match Start:** {start_dt.strftime('%I:%M %p')}")
+                start_dt_local = start_dt.astimezone()
+                st.write(f"**Match Start:** {start_dt_local.strftime('%I:%M %p')}")
                 
                 # Live Javascript Countdown
                 countdown_html = f"""

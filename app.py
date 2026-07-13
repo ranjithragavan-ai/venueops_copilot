@@ -179,7 +179,7 @@ with st.sidebar:
         if start_time_iso:
             try:
                 start_dt = datetime.datetime.fromisoformat(start_time_iso)
-                now = datetime.datetime.now()
+                now = datetime.datetime.now(datetime.timezone.utc)
                 if now >= start_dt:
                     current_attendance = 100000
                     fill_percentage = 1.0

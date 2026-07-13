@@ -476,7 +476,7 @@ with tab2:
             with st.spinner("Analyzing..."):
                 # Simple heuristic to determine if it's a report or a general question
                 # In a real app, you might use an LLM classifier first.
-                if any(word in prompt.lower() for word in ["report", "spill", "fight", "crowd", "emergency", "broken", "issue"]):
+                if any(word in prompt.lower() for word in ["report", "spill", "fight", "crowd", "emergency", "broken", "issue", "water", "leak", "plumbing", "medical", "help", "not working", "fire", "smoke", "missing", "lost", "clean", "dirty", "trash", "toilet", "repair"]):
                     # Triage workflow
                     st.write("🔍 *Analyzing incident report...*")
                     triage_result = triage_incident(prompt)

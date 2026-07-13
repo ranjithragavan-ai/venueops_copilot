@@ -1,0 +1,26 @@
+{
+  "event": "FIFA World Cup 2026 - Semi-Final",
+  "venue": "MetLife Stadium, New Jersey",
+  "capacity": 82500,
+  "current_attendance": 90200,
+  "time_to_kickoff": "-15m",
+  "match_status": "In Progress (1st Half)",
+  "weather": {
+    "condition": "Clear",
+    "temperature_c": 22,
+    "forecast": "No rain expected."
+  },
+  "gate_status": {
+    "Gate A": "Low Traffic",
+    "Gate B": "Moderate Traffic",
+    "Gate C": "High Traffic (Bottleneck Detected)",
+    "Gate D": "Closed"
+  },
+  "active_staff_available": {
+    "security": 45,
+    "medical": 12,
+    "maintenance": 20,
+    "guest_services": 60
+  },
+  "match_start_time": "2026-07-13T08:51:39.219245"
+}

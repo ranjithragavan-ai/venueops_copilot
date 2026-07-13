@@ -1,0 +1,93 @@
+[
+  {
+    "id": "SOP-01",
+    "category": "Medical Emergency",
+    "description": "Any injury, illness, or medical event requiring immediate attention.",
+    "protocol": [
+      "Dispatch nearest medical team immediately.",
+      "Clear pathway for EMT access.",
+      "Notify local hospital if transport is required.",
+      "Keep area clear of bystanders."
+    ],
+    "required_role": "Medical"
+  },
+  {
+    "id": "SOP-14",
+    "category": "Hazardous Spill",
+    "description": "Spills or broken glass posing a safety hazard.",
+    "protocol": [
+      "Cordon off the affected area.",
+      "Dispatch janitorial/cleaner team with appropriate cleaning supplies.",
+      "If slip hazard, direct foot traffic to alternate routes."
+    ],
+    "required_role": "Cleaner"
+  },
+  {
+    "id": "SOP-27",
+    "category": "Maintenance / Structural Issue",
+    "description": "Broken seats, faulty lighting, or minor structural damage.",
+    "protocol": [
+      "Cordon off the affected area to prevent injury.",
+      "Dispatch maintenance team to assess and repair.",
+      "Log the repair status in the facility management system."
+    ],
+    "required_role": "Maintenance"
+  },
+  {
+    "id": "SOP-22",
+    "category": "Crowd Bottleneck / Overcrowding",
+    "description": "Excessive crowd density at gates, concourses, or exits.",
+    "protocol": [
+      "Deploy additional guest services staff to manage flow.",
+      "Open secondary/overflow gates if available.",
+      "Use PA system to direct fans to less crowded areas.",
+      "Monitor via CCTV for escalation to crush hazard."
+    ],
+    "required_role": "Guest Services"
+  },
+  {
+    "id": "SOP-05",
+    "category": "Security Incident / Unruly Fan",
+    "description": "Fights, extreme intoxication, or unauthorized pitch access.",
+    "protocol": [
+      "Dispatch rapid response security team.",
+      "De-escalate if possible; detain if necessary.",
+      "Coordinate with local law enforcement on standby.",
+      "Document incident on CCTV."
+    ],
+    "required_role": "Security"
+  },
+  {
+    "id": "SOP-30",
+    "category": "Electrical Outage / Hazard",
+    "description": "Power loss, exposed wiring, or lighting failure.",
+    "protocol": [
+      "Isolate the electrical hazard and clear the area.",
+      "Dispatch Electrician to assess the fault.",
+      "Switch to backup generators if stadium lighting is affected."
+    ],
+    "required_role": "Electrician"
+  },
+  {
+    "id": "SOP-45",
+    "category": "Plumbing / Water Leak",
+    "description": "Burst pipes, overflowing toilets, or flooding.",
+    "protocol": [
+      "Shut off the main water valve for the affected sector.",
+      "Dispatch Plumber for immediate repairs.",
+      "Coordinate with Cleaners for water extraction."
+    ],
+    "required_role": "Plumber"
+  },
+  {
+    "id": "SOP-50",
+    "category": "Network / IT Failure",
+    "description": "POS system down, ticketing scanners offline, or CCTV failure.",
+    "protocol": [
+      "Switch to manual ticketing/cash if applicable.",
+      "Dispatch IT Technician to the affected network switch.",
+      "Establish radio communication fallback."
+    ],
+    "required_role": "IT Technician"
+  }
+]

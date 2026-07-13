@@ -32,20 +32,13 @@ Our approach separates reasoning from execution to maximize speed, reduce AI hal
 
 ## ⚖️ Evaluation & Testing Note (For Judges)
 
-To ensure this application can be evaluated seamlessly without exposing our private `.env` secrets or Firebase credentials, we implemented a robust **Graceful Degradation Architecture** in `services/db_service.py`. 
+To test this application, you **must** configure your `.env` file with a valid Gemini API Key and Firebase Service Account JSON.
 
-When the application boots:
-1. It attempts to connect to the live **Firebase Firestore** database.
-2. If the Firebase credentials are intentionally missing (e.g., when a judge clones this repo) OR if the Firebase daily quota is exhausted during aggressive testing, the system catches the exception.
-3. It automatically and silently falls back to a **Local Offline Mock Database** located in the `data/` directory.
-
-This guarantees that the UI, AI logic, and RBAC features remain 100% functional and testable out-of-the-box for evaluators, while still proving the production-ready Firebase implementation exists in the codebase.
-
-*(Note: If you wish to test the live API and Firebase integration, simply copy `.env.example` to `.env` and provide your own Gemini API Key and Firebase Service Account JSON).*
+*(Note: Simply copy `.env.example` to `.env` and provide your own credentials).*
 
 ---
 
 ### Tech Stack
 * **Frontend:** Streamlit (Python)
-* **Backend Database:** Firebase Firestore (with local JSON auto-fallback)
+* **Backend Database:** Firebase Firestore
 * **AI Engine:** Google Gemini (Generative AI SDK)

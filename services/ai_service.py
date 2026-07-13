@@ -21,7 +21,7 @@ import datetime
 
 def load_stadium_context():
     try:
-        with open("data/mock_stadium_state.json", "r") as f:
+        with open("data/stadium_state.json", "r") as f:
             stadium_state = json.load(f)
             
         # Logic to auto-reset match_start_time if match has ended (start_time + 3 hours)
@@ -43,7 +43,7 @@ def load_stadium_context():
         if needs_update:
             new_start = now + datetime.timedelta(minutes=30)
             stadium_state['match_start_time'] = new_start.isoformat()
-            with open("data/mock_stadium_state.json", "w") as f:
+            with open("data/stadium_state.json", "w") as f:
                 json.dump(stadium_state, f, indent=2)
 
         with open("data/sops.json", "r") as f:

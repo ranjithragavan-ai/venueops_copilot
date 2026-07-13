@@ -34,10 +34,10 @@ st.markdown("""
 # Helper to update the mock JSON for dynamic attendance
 def update_attendance(new_count):
     try:
-        with open("data/mock_stadium_state.json", "r") as f:
+        with open("data/stadium_state.json", "r") as f:
             data = json.load(f)
         data["current_attendance"] = new_count
-        with open("data/mock_stadium_state.json", "w") as f:
+        with open("data/stadium_state.json", "w") as f:
             json.dump(data, f, indent=2)
     except Exception as e:
         st.error(f"Failed to update attendance: {e}")

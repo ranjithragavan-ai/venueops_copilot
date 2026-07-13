@@ -1,43 +1,5 @@
 import json
-
-def load_table(filepath):
-    try:
-        with open(filepath, "r") as f:
-            return json.load(f)
-    except Exception:
-        return []
-
-def save_table(filepath, data):
-    try:
-        with open(filepath, "w") as f:
-            json.dump(data, f, indent=2)
-    except Exception as e:
-        print(f"Error saving {filepath}: {e}")
-
-def get_joined_roster():
-    """Returns a combined list of employee details and their current availability."""
-    details = load_table("data/employee_details.json")
-    availability = load_table("data/employee_availability.json")
-    
-    avail_map = {a["employee_id"]: a for a in availability}
-    
-    roster = []
-    for d in details:
-        emp_id = d["id"]
-        avail_info = avail_map.get(emp_id, {})
-        roster.append({
-            "id": emp_id,
-            "name": d.get("name"),
-            "role": d.get("role"),
-            "job_level": d.get("job_level"),
-            "reporting_to": d.get("reporting_to"),
-            "contact": d.get("contact"),
-            "status": avail_info.get("status", "Unknown"),
-            "building_assigned": avail_info.get("building_assigned", "Unknown"),
-            "floor_assigned": avail_info.get("floor_assigned", "Unknown"),
-            "password": "password123"
-        })
-    return roster
+from services.db_service import db_service
 
 def assign_employee(required_role, building, floor):
     """
@@ -49,7 +11,6 @@ def assign_employee(required_role, building, floor):
     5. Falls back to any available person with that role.
     Marks them as "Occupied" and returns their full details.
     """
-    from services.db_service import db_service
     roster = db_service.get_all_users()
     
     # Filter by available role (fuzzy match)
@@ -98,54 +59,28 @@ def free_employee(employee_id):
     """Marks an employee as Available again."""
     if not employee_id:
         return
-        
-    availability = load_table("data/employee_availability.json")
-    for a in availability:
-        if a["employee_id"] == employee_id:
-            a["status"] = "Available"
-            break
-    save_table("data/employee_availability.json", availability)
+    db_service.update_user(employee_id, {"status": "Available"})
 
 def occupy_manager(manager_name):
     """Finds a manager by name and sets them to Occupied."""
     if not manager_name:
         return
-        
-    details = load_table("data/employee_details.json")
-    mgr_id = next((d["id"] for d in details if d.get("name") == manager_name), None)
-    
+    roster = db_service.get_all_users()
+    mgr_id = next((d["id"] for d in roster if d.get("name") == manager_name), None)
     if mgr_id:
-        availability = load_table("data/employee_availability.json")
-        for a in availability:
-            if a["employee_id"] == mgr_id:
-                a["status"] = "Occupied"
-                break
-        save_table("data/employee_availability.json", availability)
+        db_service.update_user(mgr_id, {"status": "Occupied"})
 
 def free_manager(manager_name):
     """Finds a manager by name and sets them to Available."""
     if not manager_name:
         return
-        
-    details = load_table("data/employee_details.json")
-    mgr_id = next((d["id"] for d in details if d.get("name") == manager_name), None)
-    
+    roster = db_service.get_all_users()
+    mgr_id = next((d["id"] for d in roster if d.get("name") == manager_name), None)
     if mgr_id:
-        availability = load_table("data/employee_availability.json")
-        for a in availability:
-            if a["employee_id"] == mgr_id:
-                a["status"] = "Available"
-                break
-        save_table("data/employee_availability.json", availability)
+        db_service.update_user(mgr_id, {"status": "Available"})
 
 def occupy_employee(employee_id):
     """Marks an employee as Occupied."""
     if not employee_id:
         return
-        
-    availability = load_table("data/employee_availability.json")
-    for a in availability:
-        if a["employee_id"] == employee_id:
-            a["status"] = "Occupied"
-            break
-    save_table("data/employee_availability.json", availability)
+    db_service.update_user(employee_id, {"status": "Occupied"})

@@ -9,10 +9,8 @@ venv.bak/
 
 # Secrets and Data
 secrets/
-data/
 *.json
-!data/employee_details.json
-!data/incident_tickets.json
+!data/stadium_state.json
 !data/sops.json
 
 # Byte-compiled / optimized / DLL files

@@ -199,7 +199,10 @@ class DBService:
             users = [doc.to_dict() for doc in docs]
             return users
         except Exception as e:
-            print(f"Error reading users from Firebase: {e}")
+            error_msg = str(e)
+            print(f"Error reading users from Firebase: {error_msg}")
+            if "429" in error_msg or "Quota" in error_msg:
+                return "QUOTA_EXCEEDED"
             return []
             
     def add_user(self, user_data):

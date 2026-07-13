@@ -55,8 +55,11 @@ def show_login_screen():
     st.title("🏟️ VenueOps Copilot - Login")
     
     users = db_service.get_all_users()
-    if not users:
+    if users == "QUOTA_EXCEEDED":
         st.error("Firebase database quota exhausted. Please try again tomorrow at 12:00 AM PST (when the daily quota resets).")
+        return
+    elif not users:
+        st.error("No users found in database.")
         return
         
     user_map = {u['id']: u for u in users}

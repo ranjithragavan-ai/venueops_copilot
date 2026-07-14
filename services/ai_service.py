@@ -96,7 +96,7 @@ class TicketSchema:
             },
             "escalation_contact": {
                 "type": "STRING",
-                "description": "The manager or lead to escalate this to based on the SOP (e.g., Facilities Manager, Head of Security, Chief Medical Officer)."
+                "description": "The manager or lead to escalate this to based on the SOP (e.g., Facilities Manager, Head of Security, Chief Medical Officer). For fire or critical safety hazards, explicitly include external contacts like 'Fire Safety Officer (Ext: 911)' or 'Local Fire Department'."
             }
         },
         "required": ["incident_type", "severity", "location", "building", "floor", "action_required", "sop_reference", "required_role", "escalation_contact"]

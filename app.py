@@ -411,7 +411,7 @@ with tab1:
                 priority_color = "#dc3545" if severity == "High" else "#ffc107" if severity == "Medium" else "#28a745"
                 
                 st.markdown(f"""
-            <div style="padding: 10px; border-left: 5px solid {priority_color}; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 10px;" aria-label="Ticket item">
+            <article role="article" aria-label="Open ticket {t['id']} - {html.escape(t.get('title', t.get('incident_type', 'Incident')))}" style="padding: 10px; border-left: 5px solid {priority_color}; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 10px;">
                 <h4 style="margin:0; color:#333;">{html.escape(t.get('title', t.get('incident_type', 'No Title')))} <span style="font-size:0.8em; color:gray;">({t['id']})</span></h4>
                 <p style="margin:5px 0;"><strong>Severity:</strong> {t.get('severity', 'Low')} &nbsp;|&nbsp; <strong>Status:</strong> {t['status']}</p>
                 <p style="margin:5px 0; font-size:0.9em; color:#555;">{html.escape(t.get('description', ''))}</p>
@@ -420,7 +420,7 @@ with tab1:
                     <strong>Reported By:</strong> {t.get('reported_by', 'Unknown')} &nbsp;|&nbsp; 
                     <strong>Assigned To:</strong> <span style="color: #0055a4; font-weight: bold;">{assigned_text}</span><br/>
                     <strong>Escalation Contact:</strong> ⚠️ {t.get('escalation_contact', 'N/A')}</p>
-            </div>
+            </article>
             """, unsafe_allow_html=True)
                 
                 btn_cols = st.columns(2)
@@ -483,14 +483,14 @@ with tab1:
                     assigned_text = f"{assigned.get('name')} ({assigned.get('role')})"
                 
                 st.markdown(f"""
-                <div class="ticket-card status-Resolved">
-                    <h4><del>{t.get('id')} - {t.get('incident_type')}</del></h4>
+                <article role="article" aria-label="Resolved ticket {t.get('id')}" class="ticket-card status-Resolved">
+                    <h4><del>{html.escape(str(t.get('id', '')))} - {html.escape(str(t.get('incident_type', '')))}</del></h4>
                     <p style="color: #6c757d;">
-                    <em>Resolved at {t.get('resolved_at', 'unknown time')}</em><br/>
-                    <strong>Location:</strong> {t.get('location')}<br/>
-                    <strong>Escalation Contact:</strong> {t.get('escalation_contact', 'N/A')}<br/>
-                    <strong>Handled By:</strong> {assigned_text}</p>
-                </div>
+                    <em>Resolved at {html.escape(str(t.get('resolved_at', 'unknown time')))}</em><br/>
+                    <strong>Location:</strong> {html.escape(str(t.get('location', '')))}<br/>
+                    <strong>Escalation Contact:</strong> {html.escape(str(t.get('escalation_contact', 'N/A')))}<br/>
+                    <strong>Handled By:</strong> {html.escape(assigned_text)}</p>
+                </article>
                 """, unsafe_allow_html=True)
                 
                 # Activity Log & Comments (Resolved)

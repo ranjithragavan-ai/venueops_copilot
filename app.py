@@ -4,7 +4,7 @@ import json
 from services.db_service import db_service
 from services.ai_service import triage_incident, chat_with_copilot, load_stadium_context
 from services.weather_service import get_live_weather
-from services.geocoding import geocode_city
+from services.geocoding import geocode_city, get_ip_location
 from streamlit_geolocation import streamlit_geolocation
 
 @st.cache_data(ttl=5)
@@ -283,6 +283,15 @@ with st.sidebar:
         elif loc and loc.get('latitude') and loc.get('longitude'):
             lat = loc['latitude']
             lon = loc['longitude']
+        else:
+            # AUTOMATIC FALLBACK: Use IP to get location seamlessly
+            client_ip = None
+            try:
+                if hasattr(st, "context") and hasattr(st.context, "headers"):
+                    client_ip = st.context.headers.get("X-Forwarded-For", "").split(",")[0].strip() or None
+            except:
+                pass
+            lat, lon, display_city = get_ip_location(client_ip)
             
         weather = get_live_weather(lat, lon)
         if display_city:

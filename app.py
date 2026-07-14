@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import json
+import bcrypt
+import html
 from services.db_service import db_service
 from services.ai_service import triage_incident, chat_with_copilot, load_stadium_context
 from services.weather_service import get_live_weather
@@ -85,7 +87,9 @@ def show_login_screen():
             confirm_password = st.text_input("Confirm Password", type="password")
             if st.form_submit_button("Reset Password", type="primary"):
                 if new_password and new_password == confirm_password:
-                    db_service.update_user(emp_id, {"password": new_password})
+                    salt = bcrypt.gensalt()
+                    hashed = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
+                    db_service.update_user(emp_id, {"password": hashed})
                     st.success("Password reset successfully! Please log in.")
                     st.session_state["otp_verified_for"] = None
                     st.session_state["login_attempts"][emp_id.upper()] = 0
@@ -115,12 +119,20 @@ def show_login_screen():
                 
                 if attempts >= 3:
                     st.error("Account locked due to too many failed attempts.")
-                elif user.get("password") == password:
-                    st.session_state["user"] = user
-                    st.session_state["login_attempts"][emp_id] = 0 # reset on success
-                    st.rerun()
                 else:
-                    st.session_state["login_attempts"][emp_id] = attempts + 1
+                    db_pwd = user.get("password", "")
+                    is_valid = False
+                    if db_pwd.startswith("$2b$"):
+                        is_valid = bcrypt.checkpw(password.encode('utf-8'), db_pwd.encode('utf-8'))
+                    else:
+                        is_valid = (db_pwd == password)
+
+                    if is_valid:
+                        st.session_state["user"] = user
+                        st.session_state["login_attempts"][emp_id] = 0 # reset on success
+                        st.rerun()
+                    else:
+                        st.session_state["login_attempts"][emp_id] = attempts + 1
                     remaining = 3 - st.session_state["login_attempts"][emp_id]
                     if remaining > 0:
                         st.error(f"Incorrect Password. {remaining} attempts remaining.")
@@ -373,16 +385,20 @@ with tab1:
                     
                 status_icon = "🚨 ESCALATED" if t.get("status") == "Escalated" else "🔴 OPEN"
                 
+                priority_color = "#dc3545" if severity == "High" else "#ffc107" if severity == "Medium" else "#28a745"
+                
                 st.markdown(f"""
-                <div class="ticket-card priority-{severity}">
-                    <h4>{t.get('id')} - {t.get('incident_type')} <span style="font-size: 0.8em; color: {'#dc3545' if t.get('status') == 'Escalated' else 'inherit'};">[{status_icon}]</span></h4>
-                    <p><strong>Location:</strong> {t.get('location')} (Bldg: {t.get('building', 'Unknown')}, Fl: {t.get('floor', 'Unknown')})<br/>
-                    <strong>Severity:</strong> {severity} <span style="float: right; font-weight: bold; color: #dc3545;">⏱️ SLA: {t.get('sla', 'N/A')}</span><br/>
-                    <strong>Action:</strong> {t.get('action_required')}<br/>
+            <div style="padding: 10px; border-left: 5px solid {priority_color}; background-color: #f8f9fa; border-radius: 5px; margin-bottom: 10px;" aria-label="Ticket item">
+                <h4 style="margin:0; color:#333;">{html.escape(t.get('title', t.get('incident_type', 'No Title')))} <span style="font-size:0.8em; color:gray;">({t['id']})</span></h4>
+                <p style="margin:5px 0;"><strong>Severity:</strong> {t.get('severity', 'Low')} &nbsp;|&nbsp; <strong>Status:</strong> {t['status']}</p>
+                <p style="margin:5px 0; font-size:0.9em; color:#555;">{html.escape(t.get('description', ''))}</p>
+                <p style="margin:5px 0; font-size:0.8em; color:#777;">
+                    <strong>Location:</strong> {t.get('building', 'Unknown')} - {t.get('floor', 'Unknown')} &nbsp;|&nbsp; 
+                    <strong>Reported By:</strong> {t.get('reported_by', 'Unknown')} &nbsp;|&nbsp; 
                     <strong>Assigned To:</strong> <span style="color: #0055a4; font-weight: bold;">{assigned_text}</span><br/>
                     <strong>Escalation Contact:</strong> ⚠️ {t.get('escalation_contact', 'N/A')}</p>
-                </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
                 
                 btn_cols = st.columns(2)
                 with btn_cols[0]:
@@ -404,14 +420,14 @@ with tab1:
                         for act in activities:
                             st.caption(f"**{act['user']}** - {act['action']} ({act['timestamp'][:16].replace('T', ' ')})")
                             if act.get('comment'):
-                                st.write(f"*{act['comment']}*")
+                                st.write(f"*{html.escape(act['comment'])}*")
                     else:
                         st.caption("No activity yet.")
                         
                     new_comment = st.text_input("Add a comment", key=f"comment_input_open_{t['id']}")
                     if st.button("Post Comment", key=f"post_comment_open_{t['id']}"):
                         if new_comment:
-                            db_service.add_ticket_activity(t['id'], logged_in_user['name'], "Comment", new_comment)
+                            db_service.add_ticket_activity(t['id'], logged_in_user['name'], "Comment", html.escape(new_comment))
                             st.rerun()
 
                 # Reassign Logic (Managers & Admins)
@@ -461,14 +477,14 @@ with tab1:
                         for act in activities:
                             st.caption(f"**{act['user']}** - {act['action']} ({act['timestamp'][:16].replace('T', ' ')})")
                             if act.get('comment'):
-                                st.write(f"*{act['comment']}*")
+                                st.write(f"*{html.escape(act['comment'])}*")
                     else:
                         st.caption("No activity yet.")
                         
                     new_comment = st.text_input("Add a comment", key=f"comment_input_res_{t['id']}")
                     if st.button("Post Comment", key=f"post_comment_res_{t['id']}"):
                         if new_comment:
-                            db_service.add_ticket_activity(t['id'], logged_in_user['name'], "Comment", new_comment)
+                            db_service.add_ticket_activity(t['id'], logged_in_user['name'], "Comment", html.escape(new_comment))
                             st.rerun()
 
                 if is_admin or is_manager:
@@ -506,9 +522,10 @@ with tab2:
                 # Simple heuristic to determine if it's a report or a general question
                 # In a real app, you might use an LLM classifier first.
                 if any(word in prompt.lower() for word in ["report", "spill", "fight", "crowd", "emergency", "broken", "issue", "water", "leak", "plumbing", "medical", "help", "not working", "fire", "smoke", "missing", "lost", "clean", "dirty", "trash", "toilet", "repair"]):
-                    # Triage workflow
-                    st.write("🔍 *Analyzing incident report...*")
-                    triage_result = triage_incident(prompt)
+                    st.write("🧠 AI is analyzing your report...")
+                    # Sanitize the input description against XSS
+                    safe_desc = html.escape(prompt)
+                    triage_result = triage_incident(safe_desc)
                     
                     if "error" in triage_result:
                         response_text = f"❌ **Error during triage:** {triage_result['error']}"
@@ -623,9 +640,10 @@ with tab4:
             new_pass = st.text_input("Update Password", type="password", placeholder="Leave blank to keep current")
             
             if st.form_submit_button("Save Profile", type="primary"):
-                updates = {"phone_number": new_phone, "address": new_addr}
+                updates = {"phone_number": html.escape(new_phone), "address": html.escape(new_addr)}
                 if new_pass:
-                    updates["password"] = new_pass
+                    salt = bcrypt.gensalt()
+                    updates["password"] = bcrypt.hashpw(new_pass.encode('utf-8'), salt).decode('utf-8')
                 db_service.update_user(logged_in_user["id"], updates)
                 st.success("Profile updated! Please log in again to reflect changes.")
                 
@@ -656,15 +674,17 @@ with tab4:
                         next_num = max(existing_ids) + 1 if existing_ids else 1
                         generated_id = f"EMP{next_num:03d}"
                         
-                        user_data = {
+                        salt = bcrypt.gensalt()
+                        hashed_pw = bcrypt.hashpw(new_password.encode('utf-8'), salt).decode('utf-8')
+                        new_user = {
                             "id": generated_id,
-                            "name": new_name,
+                            "name": html.escape(new_name),
                             "role": new_role,
-                            "reporting_to": new_manager,
-                            "phone_number": new_phone,
-                            "contact": new_phone,  # Sync both fields for legacy compatibility
-                            "address": new_address,
-                            "password": new_password,
+                            "password": hashed_pw,
+                            "reporting_to": html.escape(new_manager),
+                            "phone_number": html.escape(new_phone),
+                            "contact": html.escape(new_phone),  # Sync both fields for legacy compatibility
+                            "address": html.escape(new_address),
                             "status": "Available",
                             "building_assigned": "All",
                             "floor_assigned": "All"

@@ -1,5 +1,7 @@
 import requests
+import streamlit as st
 
+@st.cache_data(ttl=3600)
 def geocode_city(city_name):
     try:
         url = f"https://nominatim.openstreetmap.org/search?q={city_name}&format=json&limit=1"
@@ -12,6 +14,7 @@ def geocode_city(city_name):
         print(f"Geocoding error: {e}")
     return None, None, city_name
 
+@st.cache_data(ttl=3600)
 def get_ip_location(client_ip=None):
     """Fetches lat/lon/city based on IP address automatically."""
     try:

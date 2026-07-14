@@ -4,6 +4,7 @@ import json
 from services.db_service import db_service
 from services.ai_service import triage_incident, chat_with_copilot, load_stadium_context
 from services.weather_service import get_live_weather
+from services.geocoding import geocode_city
 from streamlit_geolocation import streamlit_geolocation
 
 @st.cache_data(ttl=5)
@@ -273,12 +274,19 @@ with st.sidebar:
         st.caption("Click the 🎯 button below to get local weather!")
         loc = streamlit_geolocation()
         
+        manual_city = st.text_input("Or enter city manually (if blocked):", placeholder="e.g. Chennai, India")
+        
         lat, lon = None, None
-        if loc and loc.get('latitude') and loc.get('longitude'):
+        display_city = None
+        if manual_city:
+            lat, lon, display_city = geocode_city(manual_city)
+        elif loc and loc.get('latitude') and loc.get('longitude'):
             lat = loc['latitude']
             lon = loc['longitude']
             
         weather = get_live_weather(lat, lon)
+        if display_city:
+            weather['city'] = display_city
         
         # Display dynamically fetched city instead of hardcoded stadium state venue
         st.write(f"**{weather.get('city', stadium_state.get('venue'))}**")

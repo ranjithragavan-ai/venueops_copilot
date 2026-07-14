@@ -73,7 +73,8 @@ def show_login_screen():
         st.error("No users found in database.")
         return
         
-    user_map = {u['id']: u for u in users}
+    # Make the mapping case insensitive so 'admin' works with uppercase input
+    user_map = {u['id'].upper(): u for u in users}
     
     # OTP Reset UI
     if st.session_state["otp_verified_for"]:
@@ -87,7 +88,7 @@ def show_login_screen():
                     db_service.update_user(emp_id, {"password": new_password})
                     st.success("Password reset successfully! Please log in.")
                     st.session_state["otp_verified_for"] = None
-                    st.session_state["login_attempts"][emp_id] = 0
+                    st.session_state["login_attempts"][emp_id.upper()] = 0
                     st.rerun()
                 else:
                     st.error("Passwords do not match.")
@@ -143,7 +144,8 @@ def show_login_screen():
                 otp = st.text_input("Enter Mobile OTP")
                 if st.form_submit_button("Verify OTP"):
                     if otp == "1234":
-                        st.session_state["otp_verified_for"] = emp_id
+                        true_id = user_map[emp_id]["id"] if emp_id in user_map else emp_id
+                        st.session_state["otp_verified_for"] = true_id
                         st.session_state["otp_sent_to"] = None
                         st.rerun()
                     else:

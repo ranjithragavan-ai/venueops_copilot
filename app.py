@@ -103,12 +103,11 @@ def show_login_screen():
     """)
     
     with st.form("login_form"):
-        emp_id = st.text_input("Employee ID")
+        emp_id = st.text_input("Employee ID").strip().upper()
         password = st.text_input("Password", type="password")
         submitted = st.form_submit_button("Log In", type="primary")
         
         if submitted:
-            emp_id = emp_id.strip()
             if emp_id in user_map:
                 user = user_map[emp_id]
                 attempts = st.session_state["login_attempts"].get(emp_id, 0)
@@ -578,7 +577,9 @@ with tab3:
         status_filter = f_col3.selectbox("Status", ["All", "Available", "Occupied"])
         
         # Prevent double 'All' if 'All' is already in the unique buildings
-        buildings_list = [b for b in sorted(df["Building"].unique().tolist()) if b != "All"]
+        # Filter out None values before sorting to avoid TypeError
+        buildings_list = [str(b) for b in df["Building"].unique().tolist() if b is not None]
+        buildings_list = [b for b in sorted(buildings_list) if b != "All"]
         bldg_filter = f_col4.selectbox("Building", ["All"] + buildings_list)
         
         # Apply Filters

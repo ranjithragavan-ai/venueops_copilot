@@ -14,31 +14,46 @@ except ImportError:
 load_dotenv()
 
 class DBService:
-    def __init__(self):
+    def __init__(self) -> None:
+        """
+        Initialise the Firestore client.
+
+        Supports three credential sources (in priority order):
+        1. Streamlit Cloud ``st.secrets["firebase"]`` dictionary.
+        2. A JSON key file whose path is set in ``FIREBASE_CREDENTIALS_PATH``.
+        3. CI / test environments — sets ``self.db = None`` gracefully so that
+           unit tests can patch ``self.db`` without the constructor raising.
+        """
         self.db = None
-        
+
+        # Abort silently in CI environments that intentionally have no credentials
+        cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "")
+        if cred_path == "MOCK_CI_ENV":
+            print("CI environment detected — Firebase initialisation skipped.")
+            return
+
         try:
-            # Try to check if running on Streamlit Cloud with secrets
+            # --- Streamlit Cloud secrets (production) ---
             try:
                 import streamlit as st
                 has_secrets = "firebase" in st.secrets
             except Exception:
                 has_secrets = False
-                
+
             if has_secrets:
                 cert_dict = dict(st.secrets["firebase"])
                 cred = credentials.Certificate(cert_dict)
             else:
-                cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH", "./secrets/firebase-service-account.json")
-                cred = credentials.Certificate(cred_path)
-                
+                fallback_path = cred_path or "./secrets/firebase-service-account.json"
+                cred = credentials.Certificate(fallback_path)
+
             if not firebase_admin._apps:
                 firebase_admin.initialize_app(cred)
             self.db = firestore.client()
             print("Connected to Firebase Firestore.")
         except Exception as e:
             print(f"Failed to initialize Firebase: {e}")
-            raise Exception("Firebase connection is required. Please check your credentials.")
+            # Do NOT raise — let the app start and show a graceful UI error instead
 
     def create_ticket(self, ticket_data):
         ticket_id = f"INC-{str(uuid.uuid4())[:6].upper()}"

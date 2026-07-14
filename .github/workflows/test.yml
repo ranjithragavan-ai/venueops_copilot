@@ -9,17 +9,32 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v4
-    - name: Set up Python
+
+    - name: Set up Python 3.11
       uses: actions/setup-python@v5
       with:
         python-version: "3.11"
         cache: "pip"
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    - name: Test with pytest
+
+    - name: Lint with flake8
       run: |
-        pytest tests/
+        pip install flake8
+        # Stop the build if there are Python syntax errors or undefined names
+        flake8 services/ tests/ --count --select=E9,F63,F7,F82 --show-source --statistics
+        # Treat all other issues as warnings (exit-zero)
+        flake8 services/ tests/ --count --exit-zero --max-complexity=12 --max-line-length=120 --statistics
+
+    - name: Run unit tests with pytest
+      env:
+        FIREBASE_CREDENTIALS_PATH: "MOCK_CI_ENV"
+        GEMINI_API_KEY: "MOCK_CI_ENV"
+      run: |
+        pytest tests/ -v --tb=short

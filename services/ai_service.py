@@ -1,5 +1,19 @@
+"""
+ai_service.py
+-------------
+Generative AI layer for VenueOps Copilot.
+
+Responsibilities:
+- Load live stadium state and SOPs from local JSON files.
+- Triage raw incident reports via Gemini Structured Outputs.
+- Power the general-purpose conversational Copilot interface.
+
+All public functions are intentionally free of Streamlit imports so that
+this module can be unit-tested in isolation without a browser context.
+"""
 import os
 import json
+from typing import Any
 from google import genai
 from google.genai import types
 from dotenv import load_dotenv
@@ -19,7 +33,18 @@ MODEL_ID = "gemini-2.5-flash"
 
 import datetime
 
-def load_stadium_context():
+def load_stadium_context() -> tuple[dict, list]:
+    """
+    Load the current stadium state and Standard Operating Procedures (SOPs).
+
+    The stadium state JSON is automatically refreshed when a match ends
+    (i.e., 3 hours after ``match_start_time``) so that the AI always
+    operates with a realistic context.
+
+    Returns:
+        A 2-tuple of ``(stadium_state_dict, sops_list)``.
+        Both values are empty collections when the files cannot be read.
+    """
     try:
         with open("data/stadium_state.json", "r") as f:
             stadium_state = json.load(f)
@@ -102,10 +127,20 @@ class TicketSchema:
         "required": ["incident_type", "severity", "location", "building", "floor", "action_required", "sop_reference", "required_role", "escalation_contact"]
     }
 
-def triage_incident(report_text):
+def triage_incident(report_text: str) -> dict[str, Any]:
     """
-    Takes a raw text report from a volunteer and uses Gemini Structured Outputs
-    to generate a clean, actionable ticket.
+    Parse a raw incident report and return a structured ticket payload.
+
+    Uses Gemini Structured Outputs (``response_mime_type="application/json"``)
+    so the response is guaranteed to conform to ``TicketSchema.schema``.
+    Temperature is kept at 0.1 for deterministic, analytical extraction.
+
+    Args:
+        report_text: Free-form incident description submitted by a volunteer.
+
+    Returns:
+        A ``dict`` matching ``TicketSchema.schema`` on success, or
+        ``{"error": <message>}`` if the API call fails.
     """
     if not client:
         return {"error": "API Key not configured."}
@@ -144,9 +179,19 @@ def triage_incident(report_text):
         print(f"Error during Gemini generation: {e}")
         return {"error": str(e)}
 
-def chat_with_copilot(chat_history, new_message):
+def chat_with_copilot(chat_history: list[dict], new_message: str) -> str:
     """
-    General purpose chat for operational queries (e.g. "Which gates are crowded?")
+    Handle a free-form conversational query from a venue manager.
+
+    Maintains full multi-turn context so follow-up questions work correctly.
+    Uses a slightly higher temperature (0.4) for more natural prose responses.
+
+    Args:
+        chat_history: List of ``{"role": str, "content": str}`` dicts.
+        new_message:  The latest user message.
+
+    Returns:
+        The assistant's response as a plain string.
     """
     if not client:
         return "I am offline because my API key is not configured."

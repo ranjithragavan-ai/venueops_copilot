@@ -1,86 +1,165 @@
-import json
+"""
+dispatch_service.py
+-------------------
+Deterministic workforce dispatch engine for VenueOps Copilot.
+
+Responsibilities:
+- Find the best available employee for a given role and location.
+- Use fuzzy string matching to tolerate minor building/floor naming variations.
+- Mark employees as Occupied/Available in Firestore as tickets are created/resolved.
+"""
+import difflib
+from typing import Optional
 from services.db_service import db_service
 
-def assign_employee(required_role, building, floor):
+
+def _is_location_match(stored: str, requested: str) -> bool:
     """
-    Finds the best available employee for the job using Firebase DB.
-    1. Filters by role.
-    2. Filters by status == "Available".
-    3. Prefers exact building match.
-    4. Prefers exact floor match.
-    5. Falls back to any available person with that role.
-    Marks them as "Occupied" and returns their full details.
+    Return ``True`` if *stored* and *requested* refer to the same location.
+
+    Matching rules (in order):
+    1. Either value is ``"All"``  →  always matches.
+    2. Exact case-insensitive match.
+    3. Fuzzy similarity ≥ 0.80 (handles typos / abbreviations).
+
+    Args:
+        stored:    The building/floor stored on the employee record.
+        requested: The building/floor extracted from the incident report.
+
+    Returns:
+        ``True`` if the locations are considered equivalent.
+    """
+    if not stored or not requested:
+        return False
+    if stored.lower() == "all" or requested.lower() == "all":
+        return True
+    return difflib.SequenceMatcher(None, stored.lower(), requested.lower()).ratio() > 0.80
+
+
+def assign_employee(
+    required_role: str,
+    building: str,
+    floor: str,
+) -> Optional[dict]:
+    """
+    Find and assign the best available employee to an incident.
+
+    Selection algorithm (priority order):
+    1. Role match  +  building match  +  floor match.
+    2. Role match  +  building match  (floor fallback).
+    3. Role match  (any location — last resort).
+
+    The selected employee's status is immediately updated to ``"Occupied"``
+    in Firestore so they cannot be double-dispatched.
+
+    Args:
+        required_role: The role type needed (e.g. ``"Security"``, ``"Medical"``).
+        building:      Target building (e.g. ``"Main Stadium"``) or ``"All"``.
+        floor:         Target floor (e.g. ``"Ground Floor"``) or ``"All"``.
+
+    Returns:
+        The employee ``dict`` from Firestore on success, or ``None`` if no
+        suitable employee is available.
     """
     roster = db_service.get_all_users()
-    
-    # Filter by available role (fuzzy match)
-    candidates = []
-    for e in roster:
-        if e.get("status") == "Available":
-            if required_role.lower() in e.get("role", "").lower() or e.get("role", "").lower() in required_role.lower():
-                candidates.append(e)
-    
-    if not candidates:
-        return None # No one available
-        
-    import difflib
-    
-    def is_match(s1, s2):
-        if not s1 or not s2:
-            return False
-        if s1.lower() == "all" or s2.lower() == "all":
-            return True
-        return difflib.SequenceMatcher(None, s1.lower(), s2.lower()).ratio() > 0.8
+    if not isinstance(roster, list):
+        return None
 
-    # Attempt to find best match
-    best_match = None
+    # --- Stage 1: filter by role and availability ---
+    candidates = [
+        e for e in roster
+        if e.get("status") == "Available"
+        and (
+            required_role.lower() in e.get("role", "").lower()
+            or e.get("role", "").lower() in required_role.lower()
+        )
+    ]
+
+    if not candidates:
+        return None
+
+    # --- Stage 2: rank by location specificity ---
+    best_match: Optional[dict] = None
+
+    # Exact building + floor
     for c in candidates:
-        c_bldg = c.get("building_assigned", "")
-        c_floor = c.get("floor_assigned", "")
-        if is_match(c_bldg, building) and is_match(c_floor, floor):
+        if _is_location_match(c.get("building_assigned", ""), building) and \
+                _is_location_match(c.get("floor_assigned", ""), floor):
             best_match = c
             break
-            
+
+    # Building only
     if not best_match:
         for c in candidates:
-            c_bldg = c.get("building_assigned", "")
-            if is_match(c_bldg, building):
+            if _is_location_match(c.get("building_assigned", ""), building):
                 best_match = c
                 break
-                
-    # Mark as Occupied in Firebase
+
+    # Any location
+    if not best_match:
+        best_match = candidates[0]
+
+    # --- Stage 3: mark as Occupied and return ---
     if best_match:
         db_service.update_user(best_match["id"], {"status": "Occupied"})
         return best_match
-    
+
     return None
 
-def free_employee(employee_id):
-    """Marks an employee as Available again."""
+
+def free_employee(employee_id: str) -> None:
+    """
+    Release an employee back to ``"Available"`` status.
+
+    Args:
+        employee_id: The Firestore document ID of the employee.
+    """
     if not employee_id:
         return
     db_service.update_user(employee_id, {"status": "Available"})
 
-def occupy_manager(manager_name):
-    """Finds a manager by name and sets them to Occupied."""
+
+def occupy_employee(employee_id: str) -> None:
+    """
+    Mark an employee as ``"Occupied"``.
+
+    Args:
+        employee_id: The Firestore document ID of the employee.
+    """
+    if not employee_id:
+        return
+    db_service.update_user(employee_id, {"status": "Occupied"})
+
+
+def occupy_manager(manager_name: str) -> None:
+    """
+    Find a manager by display name and set their status to ``"Occupied"``.
+
+    Args:
+        manager_name: The full display name of the manager.
+    """
     if not manager_name:
         return
     roster = db_service.get_all_users()
+    if not isinstance(roster, list):
+        return
     mgr_id = next((d["id"] for d in roster if d.get("name") == manager_name), None)
     if mgr_id:
         db_service.update_user(mgr_id, {"status": "Occupied"})
 
-def free_manager(manager_name):
-    """Finds a manager by name and sets them to Available."""
+
+def free_manager(manager_name: str) -> None:
+    """
+    Find a manager by display name and set their status to ``"Available"``.
+
+    Args:
+        manager_name: The full display name of the manager.
+    """
     if not manager_name:
         return
     roster = db_service.get_all_users()
+    if not isinstance(roster, list):
+        return
     mgr_id = next((d["id"] for d in roster if d.get("name") == manager_name), None)
     if mgr_id:
         db_service.update_user(mgr_id, {"status": "Available"})
-
-def occupy_employee(employee_id):
-    """Marks an employee as Occupied."""
-    if not employee_id:
-        return
-    db_service.update_user(employee_id, {"status": "Occupied"})

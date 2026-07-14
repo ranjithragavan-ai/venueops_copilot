@@ -9,12 +9,14 @@ from services.weather_service import get_live_weather
 from services.geocoding import geocode_city, get_ip_location
 from streamlit_geolocation import streamlit_geolocation
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=60)
 def get_all_users_cached():
+    """Cache the full user roster for 60 seconds to reduce Firebase reads."""
     return db_service.get_all_users()
 
-@st.cache_data(ttl=5)
+@st.cache_data(ttl=60)
 def get_all_tickets_cached():
+    """Cache the ticket list for 60 seconds to reduce Firebase reads."""
     return db_service.get_all_tickets()
 
 
@@ -25,23 +27,41 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for ticket cards (removed background-color to fix dark mode)
 st.markdown("""
 <style>
+    /* Ensure the app is keyboard-navigable */
+    button:focus, a:focus, input:focus, select:focus, textarea:focus {
+        outline: 3px solid #0055a4;
+        outline-offset: 2px;
+    }
     .ticket-card {
         padding: 15px;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(255,255,255,0.1);
         margin-bottom: 10px;
         border-left: 5px solid #0055a4;
-        background-color: rgba(128, 128, 128, 0.1); /* Slight contrast that works in light/dark mode */
+        background-color: rgba(128, 128, 128, 0.1);
     }
     .ticket-card h4 { margin-top: 0; }
     .priority-High, .priority-Critical { border-left-color: #dc3545; }
     .priority-Medium { border-left-color: #ffc107; }
     .priority-Low { border-left-color: #28a745; }
     .status-Resolved { opacity: 0.6; border-left-color: #6c757d; }
+    /* High-contrast skip link for screen readers */
+    .skip-link {
+        position: absolute;
+        top: -40px;
+        left: 0;
+        background: #0055a4;
+        color: white;
+        padding: 8px;
+        text-decoration: none;
+        z-index: 9999;
+    }
+    .skip-link:focus { top: 0; }
 </style>
+<a href="#main-content" class="skip-link">Skip to main content</a>
+<div id="main-content" role="main" aria-label="VenueOps Copilot Application"></div>
 """, unsafe_allow_html=True)
 
 # Helper to update the mock JSON for dynamic attendance
@@ -64,7 +84,9 @@ if "login_attempts" not in st.session_state:
 if "otp_verified_for" not in st.session_state:
     st.session_state["otp_verified_for"] = None
 
-def show_login_screen():
+def show_login_screen() -> None:
+    """Render the authentication screen with login and password-reset flows."""
+    st.markdown('<section aria-label="Login Section">', unsafe_allow_html=True)
     st.title("🏟️ VenueOps Copilot - Login")
     
     users = get_all_users_cached()
@@ -107,39 +129,40 @@ def show_login_screen():
     - **Staff:** `EMP011` | Password: `password123`
     """)
     
+    st.markdown('<div role="form" aria-label="Employee Login Form">', unsafe_allow_html=True)
     with st.form("login_form"):
-        emp_id = st.text_input("Employee ID").strip().upper()
-        password = st.text_input("Password", type="password")
+        emp_id = st.text_input("Employee ID", help="Enter your Employee ID (e.g. EMP001 or admin). Case-insensitive.").strip().upper()
+        password = st.text_input("Password", type="password", help="Enter your account password.")
         submitted = st.form_submit_button("Log In", type="primary")
-        
-        if submitted:
-            if emp_id in user_map:
-                user = user_map[emp_id]
-                attempts = st.session_state["login_attempts"].get(emp_id, 0)
-                
-                if attempts >= 3:
-                    st.error("Account locked due to too many failed attempts.")
-                else:
-                    db_pwd = user.get("password", "")
-                    is_valid = False
-                    if db_pwd.startswith("$2b$"):
-                        is_valid = bcrypt.checkpw(password.encode('utf-8'), db_pwd.encode('utf-8'))
-                    else:
-                        is_valid = (db_pwd == password)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-                    if is_valid:
-                        st.session_state["user"] = user
-                        st.session_state["login_attempts"][emp_id] = 0 # reset on success
-                        st.rerun()
-                    else:
-                        st.session_state["login_attempts"][emp_id] = attempts + 1
-                    remaining = 3 - st.session_state["login_attempts"][emp_id]
-                    if remaining > 0:
-                        st.error(f"Incorrect Password. {remaining} attempts remaining.")
-                    else:
-                        st.error("Account locked due to too many failed attempts.")
+    if submitted:
+        if emp_id in user_map:
+            user = user_map[emp_id]
+            attempts = st.session_state["login_attempts"].get(emp_id, 0)
+            
+            if attempts >= 3:
+                st.error("Account locked due to too many failed attempts.")
             else:
-                st.error("Employee ID not found.")
+                db_pwd = user.get("password", "")
+                is_valid = False
+                if db_pwd.startswith("$2b$"):
+                    is_valid = bcrypt.checkpw(password.encode('utf-8'), db_pwd.encode('utf-8'))
+                else:
+                    is_valid = (db_pwd == password)
+
+                if is_valid:
+                    st.session_state["user"] = user
+                    st.session_state["login_attempts"][emp_id] = 0 # reset on success
+                    st.rerun()
+                else:
+                    st.session_state["login_attempts"][emp_id] = attempts + 1
+                remaining = 3 - st.session_state["login_attempts"].get(emp_id, 0)
+                if remaining > 0:
+                    st.error(f"Incorrect Password. {remaining} attempts remaining.")
+        else:
+            st.error("Employee ID not found.")
+
                 
     # Show OTP unlock if locked
     if emp_id and st.session_state["login_attempts"].get(emp_id, 0) >= 3:

@@ -1,7 +1,8 @@
 # VenueOps Copilot: AI-Powered Tournament Operations
 
-🚀 **[Live Deployment: Click here to test the app!]** *(Replace this text with your Streamlit link after deploying)*
-
+🚀 **Live App:** [https://venueopscopilot.streamlit.app/](https://venueopscopilot.streamlit.app/)
+📺 **Demo Video:** [https://youtu.be/TcQpXvM94nU](https://youtu.be/TcQpXvM94nU)
+💻 **GitHub Repository:** [https://github.com/ranjithragavan-ai/venueops_copilot](https://github.com/ranjithragavan-ai/venueops_copilot)
 VenueOps Copilot is an intelligent facility management and incident dispatch system designed for large-scale sporting events and venues. It utilizes a hybrid approach, combining generative AI (Gemini) for natural language reasoning with real-time database queries (Firebase) for deterministic workforce routing.
 
 ## 📌 Chosen Vertical
